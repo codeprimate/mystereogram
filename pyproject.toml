@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mystereogram"
-version = "0.1.0"
+version = "0.2.0"
 description = "A Python command-line tool that generates autostereograms from 2D images using AI depth estimation"
 readme = "README.md"
 license = {text = "CC-BY-NC-4.0"}
