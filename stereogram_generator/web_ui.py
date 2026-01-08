@@ -278,6 +278,7 @@ def create_interface() -> gr.Blocks:
                         type="filepath",
                         height=400,
                         interactive=False,
+                        show_share_button=False,
                     )
                     
                     depth_map_output = gr.Image(
@@ -286,6 +287,7 @@ def create_interface() -> gr.Blocks:
                         height=400,
                         interactive=False,
                         visible=True,
+                        show_share_button=False,
                     )
                 
                 info_text = gr.Textbox(

@@ -25,9 +25,7 @@ from .utils import get_device, load_image, resize_image
 
 
 DEFAULT_MODEL_ID = "depth-anything/Depth-Anything-V2-Base-hf"
-# Set to True if model output needs inversion for "closer = higher".
 INVERT_DEPTH = False
-# Default padding size in pixels for depth map
 DEFAULT_PADDING = 0
 
 
