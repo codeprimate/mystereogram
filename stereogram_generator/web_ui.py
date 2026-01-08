@@ -251,7 +251,7 @@ def process_image_for_web(
 def create_interface() -> gr.Blocks:
     """Create and configure the Gradio interface."""
     
-    with gr.Blocks(title="My Stereogram Generator", theme=gr.themes.Soft()) as interface:
+    with gr.Blocks(title="My Stereogram Generator") as interface:
         gr.Markdown(
             "# My Stereogram Generator\n"
             "Transform images into autostereograms using AI depth estimation."
@@ -434,7 +434,7 @@ def create_interface() -> gr.Blocks:
         def update_color_tab_visibility(pattern_type_val: str, mono_val: bool):
             """Update Color tab visibility based on pattern type and mono setting."""
             visible = pattern_type_val == "perlin" and not mono_val
-            return gr.Tab(visible=visible)
+            return gr.update(visible=visible)
         
         pattern_type.change(
             fn=update_color_tab_visibility,
@@ -627,6 +627,7 @@ def main() -> int:
             share=args.share,
             inbrowser=not args.no_browser,
             show_error=True,
+            theme=gr.themes.Soft(),
         )
     except OSError as e:
         if "Address already in use" in str(e) or "address already in use" in str(e).lower():

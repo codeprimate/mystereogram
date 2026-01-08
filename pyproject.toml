@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mystereogram"
-version = "0.2.0"
+version = "0.3.0"
 description = "A Python command-line tool that generates autostereograms from 2D images using AI depth estimation"
 readme = "README.md"
 license = {text = "CC-BY-NC-4.0"}
@@ -34,7 +34,7 @@ dependencies = [
     "numpy>=1.21.0,<2.0.0",
     "noise>=1.0.0",
     "rich>=13.0.0,<14.0.0",
-    "gradio>=4.0.0",
+    "gradio>=6.0.0",
 ]
 
 [project.optional-dependencies]
