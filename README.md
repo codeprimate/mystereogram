@@ -21,6 +21,14 @@ A Python tool that generates autostereograms from 2D images using AI depth estim
 - Python 3.8 or higher
 - pip
 
+### Install from GitHub
+
+Install directly from the GitHub repository:
+
+```bash
+pip install git+https://github.com/codeprimate/mystereogram
+```
+
 ### Install from Source
 
 1. Clone the repository:

@@ -6,6 +6,7 @@ import argparse
 import logging
 import tempfile
 import time
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
@@ -43,6 +44,35 @@ from .utils import get_device, normalize_image, resize_image
 _model_cache: dict[str, tuple] = {}
 
 
+@dataclass
+class StereogramConfig:
+    """Configuration for stereogram generation parameters."""
+    pattern_type: str
+    mono: bool
+    perlin_scale: float
+    perlin_octaves: int
+    hue_range_min: float
+    hue_range_max: float
+    saturation_range_min: float
+    saturation_range_max: float
+    value_range_min: float
+    value_range_max: float
+    hue_scale: Optional[float]
+    saturation_scale: Optional[float]
+    value_scale: Optional[float]
+    noise_width: Optional[int]
+    shift_range: Optional[int]
+
+
+@dataclass
+class ProcessingConfig:
+    """Configuration for image processing parameters."""
+    device: str
+    padding: int
+    show_depth_map: bool
+    input_filename: Optional[str] = None
+
+
 def get_cached_model(device: str):
     """Get or load the depth estimation model for the specified device."""
     if device not in _model_cache:
@@ -53,28 +83,16 @@ def get_cached_model(device: str):
 
 def process_image_for_web(
     image_path: str,
-    pattern_type: str,
-    mono: bool,
-    device: str,
-    perlin_scale: float,
-    perlin_octaves: int,
-    hue_range_min: float,
-    hue_range_max: float,
-    saturation_range_min: float,
-    saturation_range_max: float,
-    value_range_min: float,
-    value_range_max: float,
-    hue_scale: Optional[float],
-    saturation_scale: Optional[float],
-    value_scale: Optional[float],
-    noise_width: Optional[int],
-    shift_range: Optional[int],
-    padding: int,
-    show_depth_map: bool,
-    input_filename: Optional[str] = None,
+    stereogram_config: StereogramConfig,
+    processing_config: ProcessingConfig,
 ) -> Tuple[Optional[str], Optional[Image.Image], str]:
     """
     Process an image and generate a stereogram.
+    
+    Args:
+        image_path: Path to the input image file
+        stereogram_config: Configuration for stereogram generation
+        processing_config: Configuration for image processing
     
     Returns:
         Tuple of (stereogram_file_path, depth_map_image, info_text)
@@ -91,28 +109,28 @@ def process_image_for_web(
         # Log all UI parameters received
         logger.info("=" * 60)
         logger.info("GENERATION START - UI Parameters Received:")
-        logger.info(f"  pattern_type: {pattern_type!r}")
-        logger.info(f"  mono: {mono}")
-        logger.info(f"  device: {device!r}")
-        logger.info(f"  perlin_scale: {perlin_scale}")
-        logger.info(f"  perlin_octaves: {perlin_octaves}")
-        logger.info(f"  hue_range: ({hue_range_min}, {hue_range_max})")
-        logger.info(f"  saturation_range: ({saturation_range_min}, {saturation_range_max})")
-        logger.info(f"  value_range: ({value_range_min}, {value_range_max})")
-        logger.info(f"  hue_scale: {hue_scale}")
-        logger.info(f"  saturation_scale: {saturation_scale}")
-        logger.info(f"  value_scale: {value_scale}")
-        logger.info(f"  noise_width: {noise_width}")
-        logger.info(f"  shift_range: {shift_range}")
-        logger.info(f"  padding: {padding}")
-        logger.info(f"  show_depth_map: {show_depth_map}")
+        logger.info(f"  pattern_type: {stereogram_config.pattern_type!r}")
+        logger.info(f"  mono: {stereogram_config.mono}")
+        logger.info(f"  device: {processing_config.device!r}")
+        logger.info(f"  perlin_scale: {stereogram_config.perlin_scale}")
+        logger.info(f"  perlin_octaves: {stereogram_config.perlin_octaves}")
+        logger.info(f"  hue_range: ({stereogram_config.hue_range_min}, {stereogram_config.hue_range_max})")
+        logger.info(f"  saturation_range: ({stereogram_config.saturation_range_min}, {stereogram_config.saturation_range_max})")
+        logger.info(f"  value_range: ({stereogram_config.value_range_min}, {stereogram_config.value_range_max})")
+        logger.info(f"  hue_scale: {stereogram_config.hue_scale}")
+        logger.info(f"  saturation_scale: {stereogram_config.saturation_scale}")
+        logger.info(f"  value_scale: {stereogram_config.value_scale}")
+        logger.info(f"  noise_width: {stereogram_config.noise_width}")
+        logger.info(f"  shift_range: {stereogram_config.shift_range}")
+        logger.info(f"  padding: {processing_config.padding}")
+        logger.info(f"  show_depth_map: {processing_config.show_depth_map}")
         logger.info("=" * 60)
         
         # Determine device
-        if device == "auto":
+        if processing_config.device == "auto":
             selected_device = get_device()
         else:
-            selected_device = device
+            selected_device = processing_config.device
         
         logger.info(f"Selected device: {selected_device}")
         
@@ -133,53 +151,53 @@ def process_image_for_web(
             depth_map = invert_depth_map(depth_map)
         
         # Add padding
-        depth_map = pad_depth_map(depth_map, padding=padding)
+        depth_map = pad_depth_map(depth_map, padding=processing_config.padding)
         
         # Prepare color settings
-        color_setting = False if mono else None
+        color_setting = False if stereogram_config.mono else None
         
         # Match CLI behavior: pass None for defaults, tuples only when explicitly set
         # This ensures web UI matches CLI when using default values
-        if mono:
+        if stereogram_config.mono:
             hue_range = None
             saturation_range = None
             value_range = None
         else:
             # Check if values match defaults - if so, pass None (like CLI does)
-            hue_range = None if (hue_range_min, hue_range_max) == DEFAULT_HUE_RANGE else (hue_range_min, hue_range_max)
-            saturation_range = None if (saturation_range_min, saturation_range_max) == DEFAULT_SATURATION_RANGE else (saturation_range_min, saturation_range_max)
-            value_range = None if (value_range_min, value_range_max) == DEFAULT_VALUE_RANGE else (value_range_min, value_range_max)
+            hue_range = None if (stereogram_config.hue_range_min, stereogram_config.hue_range_max) == DEFAULT_HUE_RANGE else (stereogram_config.hue_range_min, stereogram_config.hue_range_max)
+            saturation_range = None if (stereogram_config.saturation_range_min, stereogram_config.saturation_range_max) == DEFAULT_SATURATION_RANGE else (stereogram_config.saturation_range_min, stereogram_config.saturation_range_max)
+            value_range = None if (stereogram_config.value_range_min, stereogram_config.value_range_max) == DEFAULT_VALUE_RANGE else (stereogram_config.value_range_min, stereogram_config.value_range_max)
         
         logger.info("Prepared parameters for generate_autostereogram:")
-        logger.info(f"  pattern_type: {pattern_type!r}")
+        logger.info(f"  pattern_type: {stereogram_config.pattern_type!r}")
         logger.info(f"  color_setting: {color_setting}")
         logger.info(f"  hue_range: {hue_range}")
         logger.info(f"  saturation_range: {saturation_range}")
         logger.info(f"  value_range: {value_range}")
-        logger.info(f"  perlin_scale: {perlin_scale}")
-        logger.info(f"  perlin_octaves: {perlin_octaves}")
-        logger.info(f"  hue_scale: {hue_scale}")
-        logger.info(f"  saturation_scale: {saturation_scale}")
-        logger.info(f"  value_scale: {value_scale}")
-        logger.info(f"  noise_width: {noise_width}")
-        logger.info(f"  shift_range: {shift_range}")
+        logger.info(f"  perlin_scale: {stereogram_config.perlin_scale}")
+        logger.info(f"  perlin_octaves: {stereogram_config.perlin_octaves}")
+        logger.info(f"  hue_scale: {stereogram_config.hue_scale}")
+        logger.info(f"  saturation_scale: {stereogram_config.saturation_scale}")
+        logger.info(f"  value_scale: {stereogram_config.value_scale}")
+        logger.info(f"  noise_width: {stereogram_config.noise_width}")
+        logger.info(f"  shift_range: {stereogram_config.shift_range}")
         
         # Generate stereogram
         logger.info("Calling generate_autostereogram...")
         stereogram_array = generate_autostereogram(
             depth_map,
-            noise_width=noise_width,
-            shift_range=shift_range,
-            pattern_type=pattern_type,
-            perlin_scale=perlin_scale,
-            perlin_octaves=perlin_octaves,
+            noise_width=stereogram_config.noise_width,
+            shift_range=stereogram_config.shift_range,
+            pattern_type=stereogram_config.pattern_type,
+            perlin_scale=stereogram_config.perlin_scale,
+            perlin_octaves=stereogram_config.perlin_octaves,
             color=color_setting,
             hue_range=hue_range,
             saturation_range=saturation_range,
             value_range=value_range,
-            hue_scale=hue_scale,
-            saturation_scale=saturation_scale,
-            value_scale=value_scale,
+            hue_scale=stereogram_config.hue_scale,
+            saturation_scale=stereogram_config.saturation_scale,
+            value_scale=stereogram_config.value_scale,
         )
         logger.info(f"generate_autostereogram completed. Output shape: {stereogram_array.shape}, dtype: {stereogram_array.dtype}")
         
@@ -191,9 +209,9 @@ def process_image_for_web(
         
         # Generate output filename based on input filename and timestamp
         timestamp = datetime.now().strftime("%Y%m%d%H%M")
-        if input_filename:
+        if processing_config.input_filename:
             # Extract base name without extension
-            input_path = Path(input_filename)
+            input_path = Path(processing_config.input_filename)
             base_name = input_path.stem
             extension = input_path.suffix or ".png"
         else:
@@ -209,7 +227,7 @@ def process_image_for_web(
         
         # Create depth map visualization if requested
         depth_map_image = None
-        if show_depth_map:
+        if processing_config.show_depth_map:
             depth_vis = (depth_map * 255).astype(np.uint8)
             depth_map_image = Image.fromarray(depth_vis, mode="L")
         
@@ -233,9 +251,9 @@ def process_image_for_web(
 def create_interface() -> gr.Blocks:
     """Create and configure the Gradio interface."""
     
-    with gr.Blocks(title="Mystereogram Generator", theme=gr.themes.Soft()) as interface:
+    with gr.Blocks(title="My Stereogram Generator", theme=gr.themes.Soft()) as interface:
         gr.Markdown(
-            "# Mystereogram Generator\n"
+            "# My Stereogram Generator\n"
             "Transform images into autostereograms using AI depth estimation."
         )
         
@@ -462,28 +480,37 @@ def create_interface() -> gr.Blocks:
             sat_scale_processed = None if (sat_scale_val is None or sat_scale_val == SCALE_MIN) else sat_scale_val
             val_scale_processed = None if (val_scale_val is None or val_scale_val == SCALE_MIN) else val_scale_val
             
+            # Create configuration objects
+            stereogram_config = StereogramConfig(
+                pattern_type=pattern_type_val,
+                mono=mono_val,
+                perlin_scale=perlin_scale_val,
+                perlin_octaves=perlin_octaves_val,
+                hue_range_min=hue_min_val,
+                hue_range_max=hue_max_val,
+                saturation_range_min=sat_min_val,
+                saturation_range_max=sat_max_val,
+                value_range_min=val_min_val,
+                value_range_max=val_max_val,
+                hue_scale=hue_scale_processed,
+                saturation_scale=sat_scale_processed,
+                value_scale=val_scale_processed,
+                noise_width=int(noise_width_val) if noise_width_val is not None and noise_width_val > 0 else None,
+                shift_range=int(shift_range_val) if shift_range_val is not None and shift_range_val > 0 else None,
+            )
+            
+            processing_config = ProcessingConfig(
+                device=device_val,
+                padding=int(padding_val),
+                show_depth_map=True,  # Always show depth map
+                input_filename=input_filename,
+            )
+            
             # Always show depth map
             result = process_image_for_web(
                 img,
-                pattern_type_val,
-                mono_val,
-                device_val,
-                perlin_scale_val,
-                perlin_octaves_val,
-                hue_min_val,
-                hue_max_val,
-                sat_min_val,
-                sat_max_val,
-                val_min_val,
-                val_max_val,
-                hue_scale_processed,
-                sat_scale_processed,
-                val_scale_processed,
-                int(noise_width_val) if noise_width_val is not None and noise_width_val > 0 else None,
-                int(shift_range_val) if shift_range_val is not None and shift_range_val > 0 else None,
-                int(padding_val),
-                True,  # Always show depth map
-                input_filename,
+                stereogram_config,
+                processing_config,
             )
             
             stereogram, depth_map, info = result
