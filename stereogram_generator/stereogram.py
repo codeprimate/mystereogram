@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import noise
 
+# Set up logging
+logger = logging.getLogger(__name__)
+
 # Pattern generation constants
 DEFAULT_PATTERN_TYPE = "perlin"
-DEFAULT_PERLIN_SCALE = 0.2
-DEFAULT_PERLIN_OCTAVES = 6
+DEFAULT_PERLIN_SCALE = 0.08
+DEFAULT_PERLIN_OCTAVES = 3
 
 # HSV color control defaults
 DEFAULT_HUE_RANGE = (0.0, 1.0)  # Full spectrum (0-360° in normalized 0-1)
@@ -103,10 +108,13 @@ def hsv_to_rgb(h: np.ndarray, s: np.ndarray, v: np.ndarray) -> np.ndarray:
 
 def generate_static_pattern(width: int, height: int, seed: int | None = None) -> np.ndarray:
     """Generate a random grayscale noise pattern."""
+    logger.info(f"generate_static_pattern called: width={width}, height={height}, seed={seed}")
     if width <= 0 or height <= 0:
         raise ValueError("Noise pattern dimensions must be positive.")
     rng = np.random.default_rng(seed)
-    return rng.integers(0, 256, size=(height, width), dtype=np.uint8)
+    result = rng.integers(0, 256, size=(height, width), dtype=np.uint8)
+    logger.info(f"generate_static_pattern completed: output shape={result.shape}, dtype={result.dtype}")
+    return result
 
 
 def generate_perlin_pattern(
@@ -143,6 +151,11 @@ def generate_perlin_pattern(
     Returns:
         Grayscale pattern (height, width) or RGB pattern (height, width, 3) as uint8
     """
+    logger.info(f"generate_perlin_pattern called:")
+    logger.info(f"  width={width}, height={height}, seed={seed}")
+    logger.info(f"  scale={scale}, octaves={octaves}, color={color}")
+    logger.info(f"  hue_range={hue_range}, saturation_range={saturation_range}, value_range={value_range}")
+    logger.info(f"  hue_scale={hue_scale}, saturation_scale={saturation_scale}, value_scale={value_scale}")
     if width <= 0 or height <= 0:
         raise ValueError("Noise pattern dimensions must be positive.")
     if scale <= 0:
@@ -169,6 +182,7 @@ def generate_perlin_pattern(
 
     if not color:
         # Generate grayscale Perlin noise
+        logger.info("  Generating grayscale Perlin pattern")
         pattern = np.zeros((height, width), dtype=np.float32)
         for y in range(height):
             for x in range(width):
@@ -184,9 +198,11 @@ def generate_perlin_pattern(
         
         # Map from [-1, 1] to [0, 255]
         pattern = ((pattern + 1.0) * 127.5).clip(0, 255).astype(np.uint8)
+        logger.info(f"generate_perlin_pattern completed (grayscale): output shape={pattern.shape}, dtype={pattern.dtype}")
         return pattern
     else:
         # Generate separate Perlin noise for H, S, V channels
+        logger.info("  Generating color Perlin pattern (HSV)")
         h_noise = np.zeros((height, width), dtype=np.float32)
         s_noise = np.zeros((height, width), dtype=np.float32)
         v_noise = np.zeros((height, width), dtype=np.float32)
@@ -251,6 +267,7 @@ def generate_perlin_pattern(
         
         # Convert HSV to RGB
         rgb = hsv_to_rgb(h, s, v)
+        logger.info(f"generate_perlin_pattern completed (color): output shape={rgb.shape}, dtype={rgb.dtype}")
         return rgb
 
 
@@ -298,6 +315,14 @@ def generate_pattern(
     Returns:
         Pattern array (grayscale or RGB) as uint8
     """
+    logger.info(f"generate_pattern called:")
+    logger.info(f"  pattern_type={pattern_type!r}")
+    logger.info(f"  width={width}, height={height}, seed={seed}")
+    logger.info(f"  perlin_scale={perlin_scale}, perlin_octaves={perlin_octaves}")
+    logger.info(f"  color={color}")
+    logger.info(f"  hue_range={hue_range}, saturation_range={saturation_range}, value_range={value_range}")
+    logger.info(f"  hue_scale={hue_scale}, saturation_scale={saturation_scale}, value_scale={value_scale}")
+    
     if pattern_type not in PATTERN_GENERATORS:
         raise ValueError(
             f"Unknown pattern type: {pattern_type}. "
@@ -305,6 +330,7 @@ def generate_pattern(
         )
 
     generator = PATTERN_GENERATORS[pattern_type]
+    logger.info(f"Selected generator: {generator.__name__} for pattern_type={pattern_type!r}")
 
     if pattern_type == "perlin":
         scale = perlin_scale if perlin_scale is not None else DEFAULT_PERLIN_SCALE
@@ -314,7 +340,12 @@ def generate_pattern(
         v_range = value_range if value_range is not None else DEFAULT_VALUE_RANGE
         # Default to color=True for Perlin patterns
         use_color = color if color is not None else True
-        return generator(
+        logger.info(f"Perlin pattern parameters:")
+        logger.info(f"  scale={scale} (from perlin_scale={perlin_scale} or DEFAULT={DEFAULT_PERLIN_SCALE})")
+        logger.info(f"  octaves={octaves} (from perlin_octaves={perlin_octaves} or DEFAULT={DEFAULT_PERLIN_OCTAVES})")
+        logger.info(f"  use_color={use_color} (from color={color} or default True)")
+        logger.info(f"  hue_range={h_range}, saturation_range={s_range}, value_range={v_range}")
+        result = generator(
             width,
             height,
             seed=seed,
@@ -328,10 +359,15 @@ def generate_pattern(
             saturation_scale=saturation_scale,
             value_scale=value_scale,
         )
+        logger.info(f"generate_pattern completed (perlin): output shape={result.shape}, dtype={result.dtype}")
+        return result
     else:
         if color:
             raise ValueError("Color patterns are only supported for 'perlin' pattern type.")
-        return generator(width, height, seed=seed)
+        logger.info(f"Calling generator for pattern_type={pattern_type!r} (non-perlin)")
+        result = generator(width, height, seed=seed)
+        logger.info(f"generate_pattern completed ({pattern_type}): output shape={result.shape}, dtype={result.dtype}")
+        return result
 
 
 # Backward compatibility alias
@@ -413,14 +449,30 @@ def generate_autostereogram(
     Returns:
         Stereogram array (grayscale or RGB) as uint8
     """
+    logger.info("=" * 60)
+    logger.info("generate_autostereogram called with parameters:")
+    logger.info(f"  pattern_type={pattern_type!r} (default={DEFAULT_PATTERN_TYPE!r})")
+    logger.info(f"  noise_width={noise_width}, shift_range={shift_range}, seed={seed}")
+    logger.info(f"  perlin_scale={perlin_scale}, perlin_octaves={perlin_octaves}")
+    logger.info(f"  color={color}")
+    logger.info(f"  hue_range={hue_range}, saturation_range={saturation_range}, value_range={value_range}")
+    logger.info(f"  hue_scale={hue_scale}, saturation_scale={saturation_scale}, value_scale={value_scale}")
+    
     if depth_map.ndim != 2:
         raise ValueError("Depth map must be a 2D array.")
 
     height, width = depth_map.shape
+    logger.info(f"Depth map dimensions: {height}x{width}")
+    
+    original_noise_width = noise_width
+    original_shift_range = shift_range
     noise_width = calculate_noise_width(width, noise_width)
     shift_range = calculate_shift_range(width, noise_width, shift_range)
+    logger.info(f"Calculated noise_width: {noise_width} (from input={original_noise_width})")
+    logger.info(f"Calculated shift_range: {shift_range} (from input={original_shift_range})")
 
     depth_map = np.clip(depth_map, 0.0, 1.0)
+    logger.info("Calling generate_pattern...")
     pattern = generate_pattern(
         pattern_type,
         noise_width,
@@ -436,11 +488,14 @@ def generate_autostereogram(
         saturation_scale=saturation_scale,
         value_scale=value_scale,
     )
+    logger.info(f"Pattern generated: shape={pattern.shape}, dtype={pattern.dtype}")
 
     # Determine if pattern is color (3D) or grayscale (2D)
     is_color = pattern.ndim == 3
+    logger.info(f"Pattern is {'color' if is_color else 'grayscale'}")
     
     if is_color:
+        logger.info("Generating color stereogram...")
         stereogram = np.zeros((height, width, 3), dtype=np.uint8)
         stereogram[:, :noise_width, :] = pattern
         
@@ -452,6 +507,7 @@ def generate_autostereogram(
                 src_col = max(0, min(width - 1, src_col))
                 stereogram[row, col, :] = stereogram[row, src_col, :]
     else:
+        logger.info("Generating grayscale stereogram...")
         stereogram = np.zeros((height, width), dtype=np.uint8)
         stereogram[:, :noise_width] = pattern
         
@@ -463,4 +519,6 @@ def generate_autostereogram(
                 src_col = max(0, min(width - 1, src_col))
                 stereogram[row, col] = stereogram[row, src_col]
 
+    logger.info(f"generate_autostereogram completed: output shape={stereogram.shape}, dtype={stereogram.dtype}")
+    logger.info("=" * 60)
     return stereogram

@@ -1,6 +1,6 @@
 # Mystereogram
 
-A Python command-line tool that generates autostereograms from 2D images using AI depth estimation.
+A Python tool that generates autostereograms from 2D images using AI depth estimation. Available as both a command-line interface and an interactive web interface.
 
 ## Features
 
@@ -11,6 +11,7 @@ A Python command-line tool that generates autostereograms from 2D images using A
 - **Grayscale Mode**: Option to generate monochrome stereograms
 - **GPU Acceleration**: Supports CPU and CUDA (NVIDIA GPUs) for faster processing
 - **Automatic Optimization**: Auto-calculates optimal noise pattern width and shift range based on image size
+- **Web Interface**: Interactive Gradio-based web UI for easy experimentation
 - **Cross-Platform**: Works on macOS, Linux, and Windows
 
 ## Installation
@@ -129,6 +130,85 @@ mystereogram -i photo.jpg -o stereogram.png --device cpu
 mystereogram --clear-cache
 ```
 
+## Web Interface
+
+The web interface provides an interactive way to generate stereograms with a user-friendly GUI powered by Gradio.
+
+### Launching the Web Interface
+
+**Basic usage:**
+```bash
+mystereogram-web
+```
+
+This will start a local web server at `http://127.0.0.1:7860` and automatically open it in your browser.
+
+**Custom port:**
+```bash
+mystereogram-web --port 8080
+```
+
+**Custom host:**
+```bash
+mystereogram-web --host 0.0.0.0
+```
+
+**Create a public share link:**
+```bash
+mystereogram-web --share
+```
+
+**Don't open browser automatically:**
+```bash
+mystereogram-web --no-browser
+```
+
+### Web Interface Options
+
+**Server Options:**
+- `--port PORT`: Port number for web server (default: 7860)
+- `--host HOST`: Host address to bind to (default: 127.0.0.1)
+- `--share`: Create a public Gradio share link
+- `--no-browser`: Don't automatically open browser
+- `--log-level LEVEL`: Set logging level (DEBUG, INFO, WARNING, ERROR)
+
+### Using the Web Interface
+
+1. **Upload an Image**: Click the upload area or drag and drop an image file
+2. **Adjust Settings**: Use the tabs to configure:
+   - **Basic**: Pattern type (static/Perlin), grayscale mode, device selection
+   - **Pattern**: Perlin noise smoothness and detail level
+   - **Color**: Hue, saturation, and brightness ranges (only for Perlin patterns)
+   - **Advanced**: Noise width, shift range, and padding (leave empty for auto)
+3. **Generate**: Click the "Generate Stereogram" button
+4. **View Results**: The stereogram and depth map will be displayed, and you can download the result
+
+### Web Interface Features
+
+- **Interactive Controls**: Sliders and dropdowns for all parameters
+- **Real-time Preview**: See your stereogram and depth map immediately
+- **Smart Defaults**: Auto-calculated settings for optimal results
+- **Conditional UI**: Color controls automatically hide for static patterns or grayscale mode
+- **Processing Info**: Shows processing time, output size, and device used
+- **Depth Map Visualization**: Always displays the depth map alongside the stereogram
+
+### Web Interface Examples
+
+**Start on a different port:**
+```bash
+mystereogram-web --port 3000
+```
+
+**Share with others (creates public link):**
+```bash
+mystereogram-web --share
+```
+
+**Run on all network interfaces:**
+```bash
+mystereogram-web --host 0.0.0.0 --port 7860
+```
+
 ## How It Works
 
 1. **Input Processing**: The input image is validated and automatically resized to exactly 1 megapixel (maintaining aspect ratio) for efficient processing.
@@ -150,7 +230,13 @@ This technique is the same as viewing traditional "Magic Eye" images.
 
 ## Supported Image Formats
 
-**Input formats:** JPEG, PNG, BMP, TIFF
+**Input formats:** All formats supported by PIL/Pillow, including:
+- Common formats: JPEG, PNG, GIF, WebP, BMP, TIFF
+- Modern formats: HEIC, HEIF, AVIF, JPEG 2000 (if plugins installed)
+- Other formats: ICO, PCX, PPM, PGM, PBM, XBM, XPM, and more
+
+For animated formats (GIF, WebP), the first frame is used.
+For multi-page formats (TIFF), the first page is used.
 
 **Output formats:** JPEG, PNG (determined by output file extension)
 
@@ -194,13 +280,30 @@ pytest
 ```
 mystereogram/
 ├── stereogram_generator/
+│   ├── __init__.py
 │   ├── cli.py              # Command-line interface
 │   ├── depth_estimator.py  # Depth estimation using DepthAnything
 │   ├── stereogram.py       # Autostereogram generation
-│   └── utils.py            # Utility functions
+│   ├── utils.py            # Utility functions
+│   └── web_ui.py           # Web interface (Gradio)
 ├── tests/                  # Test suite
+│   ├── fixtures/           # Test images
+│   ├── test_cli.py
+│   ├── test_depth_estimator.py
+│   ├── test_depth_processing.py
+│   ├── test_stereogram.py
+│   └── test_utils.py
+├── docs/                   # Documentation
+│   ├── dev/
+│   │   └── publishing.md
+│   ├── gradio_ui_design.md
+│   └── spec.md
+├── LICENSE.md              # License file
+├── Makefile                # Build and development tasks
+├── pyproject.toml          # Project configuration
 ├── requirements.txt        # Python dependencies
-└── setup.py               # Package configuration
+├── setup.py               # Package setup
+└── README.md              # This file
 ```
 
 ## License

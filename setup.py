@@ -14,10 +14,12 @@ setup(
         "numpy>=1.21.0,<2.0.0",
         "noise>=1.0.0",
         "rich>=13.0.0,<14.0.0",
+        "gradio>=4.0.0",
     ],
     entry_points={
         "console_scripts": [
             "mystereogram=stereogram_generator.cli:main",
+            "mystereogram-web=stereogram_generator.web_ui:main",
         ]
     },
     python_requires=">=3.8",

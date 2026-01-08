@@ -34,6 +34,7 @@ dependencies = [
     "numpy>=1.21.0,<2.0.0",
     "noise>=1.0.0",
     "rich>=13.0.0,<14.0.0",
+    "gradio>=4.0.0",
 ]
 
 [project.optional-dependencies]
@@ -46,6 +47,7 @@ dev = [
 
 [project.scripts]
 mystereogram = "stereogram_generator.cli:main"
+mystereogram-web = "stereogram_generator.web_ui:main"
 
 [project.urls]
 Homepage = "https://github.com/codeprimate/mystereogram"

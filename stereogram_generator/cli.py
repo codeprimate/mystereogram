@@ -13,6 +13,7 @@ warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore")
 
 import argparse
+import logging
 import time
 from pathlib import Path
 from typing import Iterable
@@ -39,7 +40,7 @@ console = Console()
 
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Generate a Magic Eye-style autostereogram from an input image."
+        description="Generate an autostereogram from an input image."
     )
     parser.add_argument(
         "-i",
@@ -152,6 +153,13 @@ def create_parser() -> argparse.ArgumentParser:
         default=DEFAULT_PADDING,
         help=f"Padding size in pixels to add around depth map (default: {DEFAULT_PADDING})",
     )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Set logging level (default: INFO)",
+    )
     return parser
 
 
@@ -189,6 +197,13 @@ def main(argv: Iterable[str] | None = None) -> int:
     parser = create_parser()
     args = parser.parse_args(list(argv) if argv is not None else None)
 
+    # Configure logging
+    logging.basicConfig(
+        level=getattr(logging, args.log_level),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
     input_path = Path(args.input)
     output_path = Path(args.output)
 
@@ -199,7 +214,7 @@ def main(argv: Iterable[str] | None = None) -> int:
     if not validate_image_format(input_path):
         console.print(
             "[red]Error:[/red] unsupported input file format. "
-            "Supported formats: JPEG, PNG, BMP, TIFF."
+            "The file format may not be supported by PIL/Pillow, or the file may be corrupted."
         )
         return 1
 
