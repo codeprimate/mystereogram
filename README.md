@@ -1,6 +1,6 @@
 # Mystereogram
 
-A Python command-line tool that generates Magic Eye-style autostereograms from 2D images using AI depth estimation.
+A Python command-line tool that generates autostereograms from 2D images using AI depth estimation.
 
 ## Features
 
@@ -205,7 +205,9 @@ mystereogram/
 
 ## License
 
-[Add your license information here]
+This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
+
+See [LICENSE.md](LICENSE.md) for the full license text.
 
 ## Acknowledgments
 
