@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mystereogram"
+version = "0.1.0"
+description = "A Python command-line tool that generates autostereograms from 2D images using AI depth estimation"
+readme = "README.md"
+license = {text = "CC-BY-NC-4.0"}
+authors = [
+    {name = "codeprimate"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "torch>=2.1.0,<3.0.0",
+    "torchvision>=0.16.0,<0.18.0",
+    "transformers>=4.30.0,<4.41.0",
+    "Pillow>=9.0.0,<11.0.0",
+    "numpy>=1.21.0,<2.0.0",
+    "noise>=1.0.0",
+    "rich>=13.0.0,<14.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0,<9.0.0",
+    "pytest-cov>=4.0.0,<6.0.0",
+    "build>=1.0.0",
+    "twine>=4.0.0",
+]
+
+[project.scripts]
+mystereogram = "stereogram_generator.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/codeprimate/mystereogram"
+Repository = "https://github.com/codeprimate/mystereogram"
+Issues = "https://github.com/codeprimate/mystereogram/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["stereogram_generator*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=stereogram_generator --cov-report=term-missing --cov-report=html"
+
