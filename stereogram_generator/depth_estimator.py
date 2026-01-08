@@ -28,7 +28,7 @@ DEFAULT_MODEL_ID = "depth-anything/Depth-Anything-V2-Base-hf"
 # Set to True if model output needs inversion for "closer = higher".
 INVERT_DEPTH = False
 # Default padding size in pixels for depth map
-DEFAULT_PADDING = 50
+DEFAULT_PADDING = 0
 
 
 def load_depth_model(
