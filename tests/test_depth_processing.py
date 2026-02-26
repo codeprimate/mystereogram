@@ -127,6 +127,7 @@ def test_estimate_depth_map_with_dummy_components(tmp_path, monkeypatch):
         save_path=output_path,
         model=model,
         processor=processor,
+        padding=50,
     )
 
     assert output_path.exists()
