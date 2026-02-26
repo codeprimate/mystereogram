@@ -2,6 +2,8 @@
 
 A Python tool that generates autostereograms from 2D images using AI depth estimation. Available as both a command-line interface and an interactive web interface.
 
+![Mystereogram web interface](docs/screenshots/ss-drop.webp)
+
 ## Features
 
 - **AI-Powered Depth Estimation**: Uses DepthAnything V2-base model to automatically extract depth information from images
